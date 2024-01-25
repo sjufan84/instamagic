@@ -13,10 +13,8 @@ client = get_openai_client()
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-if "image_list" not in st.session_state:
-    st.session_state["image_list"] = []
-if "image_model" not in st.session_state:
-    st.session_state["image_model"] = "dall-e-2"
+if "image" not in st.session_state:
+    st.session_state["image"] = None
 if "size_choice" not in st.session_state:
     st.session_state["size_choice"] = "1024x1024"
 
@@ -39,13 +37,11 @@ class ImageRequest(BaseModel):
 async def generate_image(prompt : str):
     """ Generate an image from the given image request. """
     logger.debug(f"Generating image for prompt: {prompt}")
-    logger.debug(f"Image model: {st.session_state['image_model']}")
-    image_list = []
     # Generate the image
     try:
         response = client.images.generate(
             prompt=prompt,
-            model=f"{st.session_state['image_model']}",
+            model="dall-e-3",
             size=f"{st.session_state['size_choice']}",
             quality="standard",
             n=1,
@@ -53,12 +49,11 @@ async def generate_image(prompt : str):
         )
         for i in range(len(response.data)):
             logger.debug(f"Image {i}: {response.data[i].b64_json}")
-            image_list.append(decode_image(image_data=response.data[i].b64_json, image_name=f"image{i}.png"))
-            logger.debug(f"Image list: {image_list}")
+            image = decode_image(response.data[i].b64_json, f"image{i}.png")
 
-        st.session_state["image_list"] = image_list
-        logging.debug(f"Image list: {image_list}")
-        return image_list
+        st.session_state["image"] = image
+        logger.debug(f"Session state image: {st.session_state['image']}")
+        return image
 
     except OpenAIError as e:
         logger.error(f"Error generating image: {e}")

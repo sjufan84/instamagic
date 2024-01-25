@@ -30,13 +30,11 @@ logger = logging.getLogger(__name__)
 def init_session_variables():
     # Initialize session state variables
     session_vars = [
-        "current_post", "current_hashtags", "current_image_prompt", "current_image", "post_page",
-        "current_model", "model_selection", "generate_image", "image_choice", "image_list",
-        "selected_images", "image_model", "size_choice"
+        "current_post", "current_hashtags", "current_image_prompt", "image", "post_page",
+        "generate_image", "image_choice", "size_choice", "image"
     ]
     default_values = [
-        None, None, None, None, "post_home", "gpt-3.5-turbo-1106", "GPT-3.5", False, False, [],
-        [], "dall-e-2", None
+        None, None, None, None, "post_home", False, False, None, None
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -45,14 +43,6 @@ def init_session_variables():
 
 init_session_variables()
 
-# Define the callback function to update the session state
-def set_model():
-    if st.session_state["model_selection"] == 'GPT-3.5':
-        st.session_state["current_model"] = "gpt-3.5-turbo-1106"
-    elif st.session_state["model_selection"] == 'GPT-4':
-        st.session_state["current_model"] = "gpt-4-1106-preview"
-
-st.session_state.image_model = "dall-e-3"
 
 # Step 2: Save Image to File (optional if you only need to display it)
 def save_image(image, path="image.png"):
@@ -96,13 +86,12 @@ async def post_home():
     ):
         # Create a centered header using HTML with bold font
         st.markdown(
-            """<h1><b>INSTALICIO.US</b></h1>""", unsafe_allow_html=True
+            """<h1><b>INSTAMAGIC</b></h1>""", unsafe_allow_html=True
         )
         # Create a centered subheader using HTML with bold font
         st.markdown(
             """<p>
-            Transform any meal into a stunning,
-            Insta-worthy post... instantly.</p>""", unsafe_allow_html=True
+            Create stunning Instagram posts, magically.</p>""", unsafe_allow_html=True
         )
     st.text("")
     st.text("")
@@ -140,7 +129,10 @@ async def post_home():
 
         st.text("")
 
-        post_prompt = st.text_area("""###### Tell Us About This Recipe or Meal""")
+        post_prompt = st.text_area(
+            """###### Tell Us About the Post You Want to Create:""",
+            value="""I want to create a post about my recent stay at the Ritz Carlton in New York City. I stayed in a suite on the 20th floor with a view of Central Park. The room was very spacious and had a large bathroom with a jacuzzi tub. The service was excellent and the staff was very friendly. I would definitely stay here again!"""
+        )
 
     size_choice = st.radio(
         "Select your desired format:", options=["Square", "Stories"], horizontal=True, index=None,
@@ -150,13 +142,14 @@ async def post_home():
     elif size_choice == "Stories":
         st.session_state.size_choice = "1024x1792"
 
-    st.radio(
-        ":rainbow[AI Model Selection] (This option is only for testing purposes @Babette)",
-        options=["GPT-3.5", "GPT-4"], horizontal=True, index=None,
-        key="model_selection", on_change=set_model
-    )
-
     generate_post_button = st.button("Generate Post", type="primary")
+    st.markdown("""**How it works:**  Instamagic uses cutting-edge
+    AI to generate Instagram posts optimized for engagement
+    and virality based on your prompt, and optionally, a picture you upload or snap.  Maybe you went to the
+    hottest new restaurant in town and forgot to take a picture (what?), or feel like the ones you took don't
+    really do it justice.  Or maybe you just want to make your friends jealous of your trip to Tahiti, but
+    you never actually went.  Regardless, we're not here to judge.  Your ethics, our magic.  Enjoy!""")
+
     logger.debug(f"Generate post button pressed: {generate_post_button}")
     if generate_post_button:
         if picture_mode and post_prompt != "" and size_choice:
@@ -180,9 +173,6 @@ async def post_home():
         else:
             st.warning("Please make an image choice, enter a description, and select your preferred format.")
 
-    need_help_button = st.button("Need Help? (Coming Soon)" , type="primary", disabled=True)
-    about_button = st.button("About (Coming Soon)", type="primary", disabled=True)
-
 async def display_post():
     """ Display the post and the images """
     with stylable_container(
@@ -205,7 +195,7 @@ async def display_post():
         # Create a centered header using HTML with bold font
         st.markdown("""
         <h1 style='text-align: center; color: #000000;
-        font-size:4em'><b>INSTALICIO.US</b></h1>""", unsafe_allow_html=True)
+        font-size:4em'><b>INSTAMAGIC</b></h1>""", unsafe_allow_html=True)
 
     st.text("")
 
@@ -223,8 +213,10 @@ async def display_post():
     ):
         logger.debug("Entering display_post function")
         # Convert the list of hashtags to a string with a space in between and
-        # a "#" in front of each hashtag
-        hashtags_string = " ".join(["#" + hashtag for hashtag in st.session_state["current_hashtags"]])
+        # a "#" in front of each hashtag unless there is already a "#" in front of it
+        hashtags_string = " ".join(
+            ["#" + hashtag if hashtag[0] != "#" else hashtag for hashtag in st.session_state.current_hashtags]
+        )
         # Use the post-content style to display the post
         st.markdown(f'''
             <p style="font-weight: semibold; margin: 15px;">{st.session_state['current_post']}</p>
@@ -241,14 +233,14 @@ async def display_post():
 
     st.markdown(
         """<p style='text-align: center; color: #000000;
-        font-size: 20px; font-family:"Arapey";'>Pick Instalicious Image(s)</p>""", unsafe_allow_html=True
+        font-size: 20px; font-family:"Arapey";'>Your Instamagic Image:</p>""", unsafe_allow_html=True
     )
-    if not st.session_state.image_list:
-        with st.spinner("Generating your images..."):
-            st.session_state.images = await generate_image(
+    if not st.session_state.image:
+        with st.spinner("Generating your image..."):
+            st.session_state.image = await generate_image(
                 st.session_state["current_image_prompt"]
             )
-    if st.session_state.image_list != []:
+    if st.session_state.image:
         with stylable_container(
             key="image-display-container",
             css_styles="""
@@ -258,28 +250,10 @@ async def display_post():
                     }
             """,
         ):
-            if st.session_state.image_model == "dall-e-2":
-                col1, col2, col3 = st.columns(3)
-                # Display each image in one column with a radio button below it for the user to select
-                # Only one image can be selected at a time
-                # Use PIL to convert the image_url to a PIL image and then display it
-                with col1:
-                    logger.debug(f"Image 1: {st.session_state.image_list[0]}")
-                    display_image(st.session_state.image_list[0])
-                    get_image_download_link(st.session_state.image_list[0], "image1.png")
-                with col2:
-                    logger.debug(f"Image 2: {st.session_state.image_list[1]}")
-                    display_image(st.session_state.image_list[1])
-                    get_image_download_link(st.session_state.image_list[1], "image2.png")
-                with col3:
-                    logger.debug(f"Image 3: {st.session_state.image_list[2]}")
-                    display_image(st.session_state.image_list[2])
-                    get_image_download_link(st.session_state.image_list[2], "image3.png")
-            elif st.session_state.image_model == "dall-e-3":
-                # If the image model is dall-e-3, display 1 image
-                logger.debug(f"Image 1: {st.session_state.image_list[0]}")
-                display_image(st.session_state.image_list[0])
-                get_image_download_link(st.session_state.image_list[0], "image1.png")
+            # If the image model is dall-e-3, display 1 image
+            logger.debug(f"Image 1: {st.session_state.image}")
+            display_image(st.session_state.image)
+            get_image_download_link(st.session_state.image, "image1.png")
     st.markdown(
         """
         <p style="text-align: left; color: #000000; font-size:1em; margin-top: 30px; margin-left: 5px;">
@@ -296,10 +270,8 @@ async def display_post():
         st.session_state.image_choice = False
         st.session_state.current_image = None
         st.session_state.post_page = "post_home"
-        st.session_state.model_selection = "GPT-3.5"
-        st.session_state.current_model = "gpt-3.5-turbo-1106"
-        st.session_state.image_list = None
-        st.session_state.selected_image = None
+        st.session_state.size_choice = "1024x1024"
+        st.session_state.image = None
         st.rerun()
 
 if st.session_state.post_page == "post_home":

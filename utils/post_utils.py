@@ -19,9 +19,6 @@ if "model_selection" not in st.session_state:
 
 logger.debug(f"Current model: {st.session_state.current_model}")
 
-# core_models = ["gpt-4-1106-preview", "gpt-3.5-turbo-1106"]
-# logger.debug(f"Core models: {core_models}")
-
 class ImagePostResponse(BaseModel):
     """ Image Post Response Model """
     post: str = Field(..., title="post", description="The generated post text.")
@@ -36,10 +33,8 @@ class TextPostResponse(BaseModel):
 initial_message = [
     {
         "role" : "system", "content" : """You are a helpful assistant helping a user optimize and
-        create posts for Instagram centered around food and cooking.
-        The goal is to help the user generate amazing posts and images for existing recipes,
-        existing images, new recipes, new images,
-        new restaurant experiences, or some combination of those things."""
+        create posts for Instagram.The goal is to help the user generate amazing posts based on their prompt
+        and potentially an image that they have uploaded."""
     }
 ]
 
@@ -52,9 +47,7 @@ async def get_messages(post_option: str, prompt: str):
             {
                 "role": "system",
                 "content": f"""The user would like for you to generate an Instagram post optimized
-                for engagement and virality based on the prompt {prompt} they have given.  This could
-                be a recipe, a description of a dish, a description of a restaurant experience, etc.
-                If it is a recipe, you do not need to return the recipe itself, just the post text and hashtags.
+                for engagement and virality based on the prompt {prompt} they have given.
                 Your response should be returned as a JSON object in the following format:
 
                 post: str = The post to be generated.
@@ -82,8 +75,7 @@ async def get_messages(post_option: str, prompt: str):
             {
                 "role": "system", "content": f"""The user would like
                 for you to generate an Instagram post optimized
-                for engagement and virality based on the prompt {prompt} they have given.  This could
-                be a recipe, a description of a dish, a description of a restaurant experience, etc.
+                for engagement and virality based on the prompt {prompt} they have given.
                 Your response should be returned as a JSON object in the following format:
 
                 post: str = The post to be generated.
@@ -117,7 +109,7 @@ async def create_post(post_type: str, prompt: str):
         try:
             logger.debug(f"Trying model: {st.session_state.current_model}")
             response = client.chat.completions.create(
-                model=st.session_state.current_model,
+                model="gpt-4-1106-preview",
                 messages=messages,
                 temperature=0.75,
                 top_p=1,
@@ -147,8 +139,7 @@ async def alter_image(prompt: str, image_url: str):
                 {
                     "type" : "text", "text" : f"""The user has uploaded an
                     image and a prompt {prompt} that they
-                    would like to convert into a viral Instagram post. The prompt may be a recipe, a dish,
-                    a description of a restaurant experience, etc.  Based on the prompt and the image,
+                    would like to convert into a viral Instagram post. Based on the prompt and the image,
                     create an image prompt for dall-e that takes the original image and
                     optimizes it for maxiumum engagement on Instagram.  You only need to
                     focus on the new image prompt for
