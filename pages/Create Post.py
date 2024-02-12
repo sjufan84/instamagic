@@ -2,7 +2,7 @@ import streamlit as st
 from typing import List
 import logging
 from streamlit_extras.switch_page_button import switch_page
-# from utils.image_utils import create_image
+from utils.image_utils import image_options
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -125,13 +125,15 @@ platform_options = [
 
 session_vars = [
     "purpose", "persona", "tone", "platform",
-    "verbosity", "current_post", "current_image",
+    "verbosity", "current_post", "current_images",
     "post_page", "post_details", "generate_image",
-    "current_image_prompt", "display_post_page"
+    "current_image_prompt", "display_post_page",
+    "image_size_choices", "user_image_string"
 ]
 default_values = [
-    None, None, None, None, 3, None, None,
-    "Create Post", None, False, None, "display_home"
+    None, None, None, None, 3, None, [],
+    "Create Post", None, False, None, "display_home",
+    [], None
 ]
 
 for var, default_value in zip(session_vars, default_values):
@@ -191,7 +193,7 @@ def set_verbosity():
 
 def get_image_selection():
     """ Image Selection """
-    image_selection = st.radio("Would you like to include an image with your post?", ("Yes", "No"))
+    image_selection = st.radio("Would you like to include an image with your post?", ("Yes", "No"), index=1)
     if image_selection == "Yes":
         return True
     else:
@@ -217,8 +219,21 @@ def create_post_home():
     st.write("Verbosity: ", verbosity)
     details = post_details()
     generate_image = get_image_selection()
+    if generate_image:
+        st.session_state.generate_image = True
+        image_options()
+        st.markdown("**Choose the image size(s) for your post:**")
+        square_choice = st.checkbox("Square", value=False)
+        stories_choice = st.checkbox("Stories", value=False)
+        # If neither are checked, display a warning
+        if not square_choice and not stories_choice:
+            st.warning("Please select at least one image size.")
     create_post_button = st.button("Create Post")
     if create_post_button:
+        if square_choice:
+            st.session_state.image_size_choices.append("Square")
+        if stories_choice:
+            st.session_state.image_size_choices.append("Stories")
         st.session_state.purpose = purpose
         st.session_state.persona = persona
         st.session_state.tone = tone

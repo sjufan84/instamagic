@@ -60,9 +60,12 @@ def get_image_prompt(post: str, prompt: str, platform: str = None):
             {post} for a user based on their prompt {prompt} and other parameters.  The platform to optimize
             it for is {platform}, if any.  Generate a prompt for dall-e that will
             generate the most hyper-photo-realistic
-            image possible given the context provided.
+            photo possible given the context provided.
             Think through the relevant details to pass along as if you were
-            a professional photographer setting up for a photo shoot."""
+            a professional photographer setting up for a photo shoot.  Remember, the goal is to create
+            a life-like photo that is as relevant as possible to the user's prompt and parameters.  Include
+            specific photo settings, such as lens, aperture, shutter speed, ISO, and any other relevant
+            details that would help the AI generate the most hyper-photo-realistic photo possible."""
         },
     ]
     try:
