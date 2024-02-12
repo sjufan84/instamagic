@@ -1,8 +1,8 @@
 import streamlit as st
-import asyncio
 from typing import List
 import logging
-from utils.post_utils import generate_post
+from utils.post_utils import generate_post, get_image_prompt
+# from utils.image_utils import create_image
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -126,11 +126,12 @@ platform_options = [
 session_vars = [
     "purpose", "persona", "tone", "platform",
     "verbosity", "current_post", "current_image",
-    "post_page", "post_details"
+    "post_page", "post_details", "generate_image",
+    "current_image_prompt"
 ]
 default_values = [
     None, None, None, None, 3, None, None,
-    "Create Post", None
+    "Create Post", None, False, None
 ]
 
 for var, default_value in zip(session_vars, default_values):
@@ -188,6 +189,14 @@ def set_verbosity():
     (1 being very brief, 5 being very detailed)", 1, 5, 3)
     return verbosity
 
+def get_image_selection():
+    """ Image Selection """
+    image_selection = st.radio("Would you like to include an image with your post?", ("Yes", "No"))
+    if image_selection == "Yes":
+        return True
+    else:
+        return False
+
 def create_post_home():
     purpose = purpose_select(post_purposes)
     if purpose == "Other":
@@ -207,6 +216,7 @@ def create_post_home():
     logger.debug(f"Selected verbosity: {verbosity}")
     st.write("Verbosity: ", verbosity)
     details = post_details()
+    generate_image = get_image_selection()
     create_post_button = st.button("Create Post")
     if create_post_button:
         st.session_state.purpose = purpose
@@ -216,6 +226,7 @@ def create_post_home():
         st.session_state.verbosity = verbosity
         st.session_state.post_details = details
         st.session_state.post_page = "Display Post"
+        st.session_state.generate_image = generate_image
         st.rerun()
 
 def display_post():
@@ -231,6 +242,13 @@ def display_post():
             )
             post_container.write(post)
     st.write(st.session_state.current_post)
+    if st.session_state.generate_image:
+        image_prompt = get_image_prompt(
+            st.session_state.current_post,
+            st.session_state.purpose,
+            st.session_state.platform
+        )
+        st.write(image_prompt)
 
 if st.session_state.post_page == "Create Post":
     create_post_home()

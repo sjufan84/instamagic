@@ -52,3 +52,29 @@ def generate_post(
     else:
         st.write(st.session_state.current_post)
         st.session_state.current_post = None
+
+def get_image_prompt(post: str, prompt: str, platform: str = None):
+    messages = [
+        {
+            "role": "system", "content": f"""You have generated a social media post or other content
+            {post} for a user based on their prompt {prompt} and other parameters.  The platform to optimize
+            it for is {platform}, if any.  Generate a prompt for dall-e that will
+            generate the most hyper-photo-realistic
+            image possible given the context provided.
+            Think through the relevant details to pass along as if you were
+            a professional photographer setting up for a photo shoot."""
+        },
+    ]
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4-turbo-preview",
+            messages=messages,
+            max_tokens=250,
+        )
+        logger.debug(f"Response: {response}")
+        prompt_response = response.choices[0].message.content
+        logger.debug(f"Prompt response: {prompt_response}")
+        return prompt_response
+    except OpenAIError as e:
+        logger.error(f"Error generating prompt for image generation: {e}")
+        return None
