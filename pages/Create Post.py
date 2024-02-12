@@ -7,6 +7,40 @@ from streamlit_extras.switch_page_button import switch_page
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+post_tones = [
+    "Happy - conveys joy and positivity",
+    "Angry - expresses frustration or displeasure",
+    "Confused - shows uncertainty or perplexity",
+    "Professional - maintains a formal and business-like manner",
+    "Optimistic - looks at the bright side and expects the best",
+    "Pessimistic - tends to see the worst aspect of things or believe that the worst will happen",
+    "Inspirational - motivates and uplifts the audience",
+    "Sarcastic - uses irony to mock or convey contempt",
+    "Humorous - light-hearted and funny",
+    "Serious - no-nonsense and straightforward",
+    "Informative - provides useful information and insights",
+    "Casual - friendly and relaxed",
+    "Excited - shows enthusiasm or eagerness",
+    "Reflective - thoughtful, considering past experiences",
+    "Critical - analyzing and judging rigorously or in detail",
+    "Sympathetic - expresses understanding and compassion for others",
+    "Mysterious - arouses curiosity or intrigue",
+    "Romantic - pertaining to the feelings or notions of romance",
+    "Nostalgic - longing for the past, or with a wistful affection for a period or place",
+    "Motivational - encourages action or determination",
+    "Grateful - shows appreciation or thankfulness",
+    "Educational - aims to educate or instruct the reader",
+    "Questioning - inquiring or probing, often reflects a desire for knowledge",
+    "Conversational - simulates a personal dialogue or conversation",
+    "Encouraging - gives support, confidence, or hope to the reader",
+    "Empathetic - shows an ability to understand and share the feelings of others",
+    "Skeptical - not easily convinced; having doubts or reservations",
+    "Passionate - shows a strong belief or a powerful emotion",
+    "Whimsical - playfully quaint or fanciful, especially in an appealing and amusing way",
+    "Other",
+    None
+]
+
 # Purpose options list
 post_purposes = [
     "Restaurant Review",
@@ -89,6 +123,16 @@ platform_options = [
     None
 ]
 
+def tone_select(tone_options: List[str]):
+    """ Tone Selection """
+    tone = st.selectbox("What tone would you like to convey in your post?  (Select 'Other' if you do not find the appropriate option')", tone_options)
+    return tone
+
+def other_tone():
+    """ Other Tone option if use selects "Other" """
+    other_tone = st.text_input("Please specify the tone you would like to convey")
+    return other_tone
+
 def purpose_select(purpose_options: List[str]):
     """ Purpose Selection """
     purpose = st.selectbox("What is the purpose of your post?  (Select 'Other' if\
@@ -127,5 +171,10 @@ def create_post_home():
     if persona == "Other":
         persona = other_persona()
     logger.debug(f"Selected persona: {persona}")
-    
+    tone = tone_select(post_tones)
+    if tone == "Other":
+        tone = other_tone()
+    logger.debug(f"Selected tone: {tone}")
+    st.write(f"Your post will be tailored to the purpose of {purpose}, the persona of {persona}, and the tone of {tone}.")
+
 create_post_home()
