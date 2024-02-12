@@ -1,12 +1,47 @@
 """ Instamagic Home Page """
+import asyncio
 import streamlit as st
-import unittest
-from unittest.mock import patch
-import main
+from typing import List
 
-def purpose_select(purpose_options: str):
+# Purpose options list
+post_purposes = [
+    "Restaurant Review",
+    "Book Review",
+    "Family Update",
+    "Travel Experience",
+    "Recipe Share",
+    "Health & Fitness Progress",
+    "Personal Achievement",
+    "Work or Career News",
+    "Educational Content",
+    "Event Announcement",
+    "Hobby or Craft Showcase",
+    "Pet Update",
+    "Music or Playlist Recommendation",
+    "Movie or TV Show Review",
+    "Tech Gadget Review",
+    "Fashion or Beauty Tips",
+    "Sports Update",
+    "DIY Project",
+    "Gaming Experience",
+    "Charity or Cause Awareness",
+    "Political Opinion",
+    "Business Promotion",
+    "Meme or Funny Content",
+    "Question or Poll",
+    "Life Advice or Tips",
+    "Nature and Outdoor Adventures",
+    "Art and Photography",
+    "Science and Discovery",
+    "Cultural Experience",
+    "Daily Thoughts or Reflections",
+    "Other"
+]
+
+def purpose_select(purpose_options: List[str]):
     """ Purpose Selection """
-    purpose = st.selectbox("What is the purpose of your post?", purpose_options)
+    purpose = st.selectbox("What is the purpose of your post?  (Select 'Other' if\
+    you do not find the appropriate option')", purpose_options)
     return purpose
 
 def other_purpose():
@@ -14,20 +49,12 @@ def other_purpose():
     other_purpose = st.text_input("Please specify the purpose of your post")
     return other_purpose
 
-class TestMain(unittest.TestCase):
+async def main():
+    """ Main function """
+    purpose = purpose_select(post_purposes)
+    if purpose == "Other":
+        purpose = other_purpose()
+    st.write(f"Your post purpose is: {purpose}")
 
-    @patch('main.st.selectbox', return_value='Test Purpose')
-    def test_purpose_select(self, mock_selectbox):
-        purpose_options = ['Test Purpose', 'Other']
-        result = main.purpose_select(purpose_options)
-        mock_selectbox.assert_called_once_with("What is the purpose of your post?", purpose_options)
-        self.assertEqual(result, 'Test Purpose')
-
-    @patch('main.st.text_input', return_value='Test Other Purpose')
-    def test_other_purpose(self, mock_text_input):
-        result = main.other_purpose()
-        mock_text_input.assert_called_once_with("Please specify the purpose of your post")
-        self.assertEqual(result, 'Test Other Purpose')
-
-if __name__ == '__main__':
-    unittest.main()
+if __name__ == "__main__":
+    asyncio.run(main())
