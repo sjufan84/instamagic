@@ -1,7 +1,7 @@
 import streamlit as st
 from typing import List
 import logging
-from utils.post_utils import generate_post, get_image_prompt
+from streamlit_extras.switch_page_button import switch_page
 # from utils.image_utils import create_image
 
 logging.basicConfig(level=logging.DEBUG)
@@ -127,11 +127,11 @@ session_vars = [
     "purpose", "persona", "tone", "platform",
     "verbosity", "current_post", "current_image",
     "post_page", "post_details", "generate_image",
-    "current_image_prompt"
+    "current_image_prompt", "display_post_page"
 ]
 default_values = [
     None, None, None, None, 3, None, None,
-    "Create Post", None, False, None
+    "Create Post", None, False, None, "display_home"
 ]
 
 for var, default_value in zip(session_vars, default_values):
@@ -227,30 +227,7 @@ def create_post_home():
         st.session_state.post_details = details
         st.session_state.post_page = "Display Post"
         st.session_state.generate_image = generate_image
-        st.rerun()
-
-def display_post():
-    post_container = st.container()
-    if st.session_state.current_post is None:
-        with st.spinner("Generating post..."):
-            post = generate_post(
-                st.session_state.purpose,
-                st.session_state.persona,
-                st.session_state.tone,
-                st.session_state.verbosity,
-                st.session_state.post_details
-            )
-            post_container.write(post)
-    st.write(st.session_state.current_post)
-    if st.session_state.generate_image:
-        image_prompt = get_image_prompt(
-            st.session_state.current_post,
-            st.session_state.purpose,
-            st.session_state.platform
-        )
-        st.write(image_prompt)
+        switch_page("Post Display")
 
 if st.session_state.post_page == "Create Post":
     create_post_home()
-elif st.session_state.post_page == "Display Post":
-    display_post()
