@@ -74,36 +74,3 @@ def heic_to_base64(heic_path):
 
 def encode_image(image_file):
     return base64.b64encode(image_file.read()).decode('utf-8')
-
-def image_options():
-    picture_mode = st.selectbox(
-        '###### 📸 Snap a Pic, 📤 Upload an Image, or Let Us Generate One For You!',
-        ("Snap a pic", "Upload an image", "Let Us Generate One For You"), index=None,
-    )
-    if picture_mode == "Snap a pic":
-        uploaded_image = st.camera_input("Snap a pic")
-        if uploaded_image:
-            if uploaded_image.name.endswith(".heic") or uploaded_image.name.endswith(".HEIC"):
-                image_string = heic_to_base64(uploaded_image)
-                st.session_state.user_image_string = image_string
-            else:
-                image_string = encode_image(uploaded_image)
-            st.session_state.user_image_string = image_string
-
-        elif picture_mode == "Upload an image":
-            # Show a file upoloader that only accepts image files
-            uploaded_image = st.file_uploader(
-                "Upload an image", type=["png", "jpg", "jpeg", "heic", "HEIC"]
-            )
-            # Convert the image to a base64 string
-            if uploaded_image:
-                # If the file type is .heic or .HEIC, convert to a .png using PIL
-                if uploaded_image.name.endswith(".heic") or uploaded_image.name.endswith(".HEIC"):
-                    image_string = heic_to_base64(uploaded_image)
-                    st.session_state.user_image_string = image_string
-                else:
-                    image_string = encode_image(uploaded_image)
-                st.session_state.user_image_string = image_string
-        elif picture_mode == "Let Us Generate One For You":
-            st.session_state.user_image_string = None
-        st.text("")

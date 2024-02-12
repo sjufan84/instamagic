@@ -1,5 +1,5 @@
 import streamlit as st
-from utils.post_utils import generate_post, get_image_prompt
+from utils.post_utils import generate_post, get_image_prompt, alter_image
 from utils.image_utils import create_image
 
 if "display_post_page" not in st.session_state:
@@ -16,22 +16,40 @@ def display_home():
             st.session_state.verbosity,
             st.session_state.post_details
         )
-        post_container.write(post)
+        if post:
+            post_container.write(post)
+            st.session_state.current_post = post
     # @TODO Add in text area for user to request adjustments to the post
 
     if st.session_state.generate_image:
-        with st.spinner("Generating image.  This may take a few moments..."):
-            image_prompt = get_image_prompt(
-                st.session_state.current_post,
-                st.session_state.purpose,
-                st.session_state.platform
-            )
-            st.write(image_prompt)
-            if image_prompt:
-                st.write("Prompt generated, now creating image(s)...")
-                for size_choice in st.session_state.image_size_choices:
-                    image = create_image(image_prompt, size_choice)
-                    st.session_state.current_images.append(image)
+        if st.session_state.user_image_string:
+            with st.spinner("Generating image.  This may take a few moments..."):
+                image_prompt = alter_image(
+                    st.session_state.user_image_string,
+                    st.session_state.current_post,
+                    st.session_state.post_details,
+                    st.session_state.platform
+                )
+                st.write(image_prompt)
+                if image_prompt:
+                    st.write("Prompt generated, now creating image(s)...")
+                    for size_choice in st.session_state.image_size_choices:
+                        image = create_image(image_prompt, size_choice)
+                        st.session_state.current_images.append(image)
+        else:
+            with st.spinner("Generating image.  This may take a few moments..."):
+                image_prompt = get_image_prompt(
+                    st.session_state.current_post,
+                    st.session_state.post_details,
+                    st.session_state.platform
+                )
+                st.write(image_prompt)
+                if image_prompt:
+                    st.write("Prompt generated, now creating image(s)...")
+                    for size_choice in st.session_state.image_size_choices:
+                        image = create_image(image_prompt, size_choice)
+                        st.session_state.current_images.append(image)
+            
     if st.session_state.current_images != []:
         st.markdown("### Your generated images:")
         for image in st.session_state.current_images:

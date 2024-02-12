@@ -53,6 +53,60 @@ def generate_post(
         st.write(st.session_state.current_post)
         st.session_state.current_post = None
 
+def alter_image(image_url: str, post: str, prompt: str, platform: str = None):
+    """ Generate a new dall-e prompt based on the user prompt and the image """
+    st.session_state.vision_status = "used"
+    messages = [
+        {
+            "role": "system", "content": [
+                {
+                    "type" : "text", "text" : f"""You have generated a social media post or other content
+                    {post} for a user based on their prompt {prompt} and other parameters.
+                    The platform to optimize it for is {platform}, if any.
+                    You have also been provided with an image to use in the post.
+                    Generate a prompt for dall-e that will generate the most hyper-photo-realistic
+                    photo possible given the context provided.
+                    Think through the relevant details to pass along as if you were
+                    a professional photographer setting up for a photo shoot.
+                    Remember, the goal is to create
+                    a life-like photo that is as relevant as possible
+                    to the user's prompt and parameters.  Include
+                    specific photo settings, such as lens, aperture,
+                    shutter speed, ISO, and any other relevant
+                    details that would help the AI generate the most hyper-photo-realistic photo possible.
+                    Do not include hands or letters / words in the photo."""
+                },
+            ]
+        },
+        {
+            "role" : "system", "content" : [
+                {
+                    "type" : "text", "text" : "This is the image that was passed to you:"
+                },
+                {
+                    "type" : "image_url", "image_url" : f"""data:image/jpeg;base64,
+                    {st.session_state.user_image_string}"""
+                }
+            ]
+        },
+    ]
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4-vision-preview",
+            messages=messages,
+            max_tokens=500,
+        )
+        logger.debug(f"Response: {response}")
+        prompt_response = response.choices[0].message.content
+        logger.debug(f"Prompt response: {prompt_response}")
+        st.session_state.vision_prompt = prompt_response
+        return prompt_response
+    except OpenAIError as e:
+        logger.error(f"Error generating prompt for image alteration: {e}")
+        return None
+
+
 def get_image_prompt(post: str, prompt: str, platform: str = None):
     messages = [
         {
@@ -65,14 +119,15 @@ def get_image_prompt(post: str, prompt: str, platform: str = None):
             a professional photographer setting up for a photo shoot.  Remember, the goal is to create
             a life-like photo that is as relevant as possible to the user's prompt and parameters.  Include
             specific photo settings, such as lens, aperture, shutter speed, ISO, and any other relevant
-            details that would help the AI generate the most hyper-photo-realistic photo possible."""
+            details that would help the AI generate the most hyper-photo-realistic photo possible.  Do not
+            include hands or letters / words in the photo."""
         },
     ]
     try:
         response = client.chat.completions.create(
             model="gpt-4-turbo-preview",
             messages=messages,
-            max_tokens=250,
+            max_tokens=500,
         )
         logger.debug(f"Response: {response}")
         prompt_response = response.choices[0].message.content

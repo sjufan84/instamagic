@@ -2,7 +2,7 @@ import streamlit as st
 from typing import List
 import logging
 from streamlit_extras.switch_page_button import switch_page
-from utils.image_utils import image_options
+from utils.image_utils import encode_image, heic_to_base64
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -200,6 +200,8 @@ def get_image_selection():
         return False
 
 def create_post_home():
+    square_choice = None
+    stories_choice = None
     purpose = purpose_select(post_purposes)
     if purpose == "Other":
         purpose = other_purpose()
@@ -221,7 +223,36 @@ def create_post_home():
     generate_image = get_image_selection()
     if generate_image:
         st.session_state.generate_image = True
-        image_options()
+        picture_mode = st.selectbox(
+        '###### 📸 Snap a Pic, 📤 Upload an Image, or Let Us Generate One For You!',
+        ("Snap a pic", "Upload an image", "Let Us Generate One For You"), index=None,
+        )
+        if picture_mode == "Snap a pic":
+            uploaded_image = st.camera_input("Snap a pic")
+            if uploaded_image:
+                if uploaded_image.name.endswith(".heic") or uploaded_image.name.endswith(".HEIC"):
+                    image_string = heic_to_base64(uploaded_image)
+                    st.session_state.user_image_string = image_string
+                else:
+                    image_string = encode_image(uploaded_image)
+                st.session_state.user_image_string = image_string
+
+        elif picture_mode == "Upload an image":
+            # Show a file upoloader that only accepts image files
+            uploaded_image = st.file_uploader(
+                "Upload an image", type=["png", "jpg", "jpeg", "heic", "HEIC"]
+            )
+            # Convert the image to a base64 string
+            if uploaded_image:
+                # If the file type is .heic or .HEIC, convert to a .png using PIL
+                if uploaded_image.name.endswith(".heic") or uploaded_image.name.endswith(".HEIC"):
+                    image_string = heic_to_base64(uploaded_image)
+                    st.session_state.user_image_string = image_string
+                else:
+                    image_string = encode_image(uploaded_image)
+                st.session_state.user_image_string = image_string
+        elif picture_mode == "Let Us Generate One For You":
+            st.session_state.user_image_string = None
         st.markdown("**Choose the image size(s) for your post:**")
         square_choice = st.checkbox("Square", value=False)
         stories_choice = st.checkbox("Stories", value=False)
@@ -244,5 +275,5 @@ def create_post_home():
         st.session_state.generate_image = generate_image
         switch_page("Post Display")
 
-if st.session_state.post_page == "Create Post":
+if __name__ == "__main__":
     create_post_home()
