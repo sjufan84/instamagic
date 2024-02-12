@@ -16,6 +16,8 @@ def display_home():
                 st.session_state.post_details
             )
             post_container.write(post)
+    # @TODO Add in text area for user to request adjustments to the post
+
     if st.session_state.generate_image:
         with st.spinner("Generating image.  This may take a few moments..."):
             image_prompt = get_image_prompt(
