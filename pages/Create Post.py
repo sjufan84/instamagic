@@ -1,8 +1,8 @@
 import streamlit as st
+import asyncio
 from typing import List
 import logging
-from streamlit_extras.stylable_container import stylable_container
-from streamlit_extras.switch_page_button import switch_page
+from utils.post_utils import generate_post
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -123,9 +123,31 @@ platform_options = [
     None
 ]
 
+session_vars = [
+    "purpose", "persona", "tone", "platform",
+    "verbosity", "current_post", "current_image",
+    "post_page", "post_details"
+]
+default_values = [
+    None, None, None, None, 3, None, None,
+    "Create Post", None
+]
+
+for var, default_value in zip(session_vars, default_values):
+    if var not in st.session_state:
+        st.session_state[var] = default_value
+
+def post_details():
+    post_details = st.text_area("""Let us know about the details of your post
+    This could be a description of your dining experience, notes about the book you just read
+    or a summary of your recent travel adventure.  Give the basic framework of your post and
+    let us do the rest!""")
+    return post_details
+
 def tone_select(tone_options: List[str]):
     """ Tone Selection """
-    tone = st.selectbox("What tone would you like to convey in your post?  (Select 'Other' if you do not find the appropriate option')", tone_options)
+    tone = st.selectbox("What tone would you like to convey in your post?\
+    (Select 'Other' if you do not find the appropriate option')", tone_options)
     return tone
 
 def other_tone():
@@ -160,6 +182,12 @@ def platform_select(platform_options: List[str]):
     platform = st.selectbox("Which platform are you posting on, if any?", platform_options)
     return platform
 
+def set_verbosity():
+    """ Verbosity Selection """
+    verbosity = st.slider("How verbose would you like your post to be?\
+    (1 being very brief, 5 being very detailed)", 1, 5, 3)
+    return verbosity
+
 def create_post_home():
     purpose = purpose_select(post_purposes)
     if purpose == "Other":
@@ -175,6 +203,36 @@ def create_post_home():
     if tone == "Other":
         tone = other_tone()
     logger.debug(f"Selected tone: {tone}")
-    st.write(f"Your post will be tailored to the purpose of {purpose}, the persona of {persona}, and the tone of {tone}.")
+    verbosity = set_verbosity()
+    logger.debug(f"Selected verbosity: {verbosity}")
+    st.write("Verbosity: ", verbosity)
+    details = post_details()
+    create_post_button = st.button("Create Post")
+    if create_post_button:
+        st.session_state.purpose = purpose
+        st.session_state.persona = persona
+        st.session_state.tone = tone
+        st.session_state.platform = platform
+        st.session_state.verbosity = verbosity
+        st.session_state.post_details = details
+        st.session_state.post_page = "Display Post"
+        st.rerun()
 
-create_post_home()
+def display_post():
+    post_container = st.container()
+    if st.session_state.current_post is None:
+        with st.spinner("Generating post..."):
+            post = generate_post(
+                st.session_state.purpose,
+                st.session_state.persona,
+                st.session_state.tone,
+                st.session_state.verbosity,
+                st.session_state.post_details
+            )
+            post_container.write(post)
+    st.write(st.session_state.current_post)
+
+if st.session_state.post_page == "Create Post":
+    create_post_home()
+elif st.session_state.post_page == "Display Post":
+    display_post()
