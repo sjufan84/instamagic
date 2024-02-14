@@ -37,7 +37,9 @@ def display_home():
                     st.session_state.platform,
                     st.session_state.image_style
                 )
-                st.write(image_prompt)
+                st.markdown(f"""**@Babette this won't be in the final app, obviously,\
+                but thought you would find\
+                it interesting.  This is the prompt created and sent to dall-e** {image_prompt}""")
                 if image_prompt:
                     st.write("Prompt generated, now creating image(s)...")
                     for size_choice in st.session_state.image_size_choices:
@@ -51,7 +53,9 @@ def display_home():
                     st.session_state.platform,
                     st.session_state.image_style
                 )
-                st.write(image_prompt)
+                st.markdown(f"""**@Babette this won't be in the final app, obviously,\
+                but thought you would find\
+                it interesting.  This is the prompt created and sent to dall-e** {image_prompt}""")
                 if image_prompt:
                     st.write("Prompt generated, now creating image(s)...")
                     for size_choice in st.session_state.image_size_choices:
