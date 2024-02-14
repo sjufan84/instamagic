@@ -53,43 +53,74 @@ def generate_post(
         st.write(st.session_state.current_post)
         st.session_state.current_post = None
 
-def alter_image(image_url: str, post: str, prompt: str, platform: str = None):
+def alter_image(
+        image_url: str, post: str, prompt: str, platform: str = None,
+        image_style: str = "Photorealistic"):
     """ Generate a new dall-e prompt based on the user prompt and the image """
     st.session_state.vision_status = "used"
-    messages = [
-        {
-            "role": "system", "content": [
-                {
-                    "type" : "text", "text" : f"""You have generated a social media post or other content
-                    {post} for a user based on their prompt {prompt} and other parameters.
-                    The platform to optimize it for is {platform}, if any.
-                    You have also been provided with an image to use in the post.
-                    Generate a prompt for dall-e that will generate the most hyper-photo-realistic
-                    photo possible given the context provided.
-                    Think through the relevant details to pass along as if you were
-                    a professional photographer setting up for a photo shoot.
-                    Remember, the goal is to create
-                    a life-like photo that is as relevant as possible
-                    to the user's prompt and parameters.  Include
-                    specific photo settings, such as lens, aperture,
-                    shutter speed, ISO, and any other relevant
-                    details that would help the AI generate the most hyper-photo-realistic photo possible.
-                    Do not include hands or letters / words in the photo."""
-                },
-            ]
-        },
-        {
-            "role" : "system", "content" : [
-                {
-                    "type" : "text", "text" : "This is the image that was passed to you:"
-                },
-                {
-                    "type" : "image_url", "image_url" : f"""data:image/jpeg;base64,
-                    {st.session_state.user_image_string}"""
-                }
-            ]
-        },
-    ]
+    if image_style == "Photorealistic":
+        messages = [
+            {
+                "role": "system", "content": [
+                    {
+                        "type": "text",
+                        "text": f"""Based on the social media post {post} created from the input
+                        {prompt} for {platform}, and using the provided image, generate a DALL-E
+                        prompt for a highly realistic photo. Focus on capturing essential elements
+                        such as the setting (e.g., hotel, restaurant), the main subject (e.g., food, travel),
+                        and the post's tone (e.g., fun, serious) to enhance relevance and engagement.
+                        Consider photographic details like scene composition, lighting, and perspective
+                        to guide the image generation.  Include
+                        specific photo settings, such as lens, aperture,
+                        shutter speed, ISO, and any other relevant
+                        details that would help the AI generate the most
+                        hyper-photo-realistic photo possible. Aim for realism and context alignment without
+                        including hands or text. Summarize this into a concise prompt for
+                        creating an engaging, hyper-realistic photographic image."""
+                    }
+                ]
+            },
+            {
+                "role" : "system", "content" : [
+                    {
+                        "type" : "text", "text" : "This is the image that was passed to you:"
+                    },
+                    {
+                        "type" : "image_url", "image_url" : f"""data:image/jpeg;base64,
+                        {st.session_state.user_image_string}"""
+                    }
+                ]
+            },
+        ]
+    else:
+        messages = [
+            {
+                "role": "system", "content": [
+                    {
+                        "type": "text",
+                        "text": f"""Given a social media post {post} and its context {prompt}
+                        for a specified platform {platform}, as well as the attached image,
+                        create a DALL-E prompt for generating
+                        an image in the style of {image_style} that maximizes engagement.
+                        Consider the post's content,
+                        target audience, and platform specifics to identify key visual elements.
+                        Synthesize this analysis into a concise DALL-E prompt aimed at producing
+                        an engaging and contextually appropriate image."""
+                    }
+                ]
+            },
+            {
+                "role" : "system", "content" : [
+                    {
+                        "type" : "text", "text" : "This is the image that was passed to you:"
+                    },
+                    {
+                        "type" : "image_url", "image_url" : f"""data:image/jpeg;base64,
+                        {st.session_state.user_image_string}"""
+                    }
+                ]
+            }
+        ]
 
     try:
         response = client.chat.completions.create(
@@ -107,22 +138,39 @@ def alter_image(image_url: str, post: str, prompt: str, platform: str = None):
         return None
 
 
-def get_image_prompt(post: str, prompt: str, platform: str = None):
-    messages = [
-        {
-            "role": "system", "content": f"""You have generated a social media post or other content
-            {post} for a user based on their prompt {prompt} and other parameters.  The platform to optimize
-            it for is {platform}, if any.  Generate a prompt for dall-e that will
-            generate the most hyper-photo-realistic
-            photo possible given the context provided.
-            Think through the relevant details to pass along as if you were
-            a professional photographer setting up for a photo shoot.  Remember, the goal is to create
-            a life-like photo that is as relevant as possible to the user's prompt and parameters.  Include
-            specific photo settings, such as lens, aperture, shutter speed, ISO, and any other relevant
-            details that would help the AI generate the most hyper-photo-realistic photo possible.  Do not
-            include hands or letters / words in the photo."""
-        },
-    ]
+def get_image_prompt(post: str, prompt: str, platform: str = None, image_style: str = "Photorealistic"):
+    if image_style == "Photorealistic":
+        messages = [
+            {
+                "role": "system",
+                "content": f"""Given a social media post {post} and its context {prompt}
+                for a specified platform {platform}, create a DALL-E prompt for generating
+                a highly realistic image that maximizes engagement. Consider the post's content,
+                target audience, and platform specifics to identify key visual elements.
+                Detail essential photographic aspects to guide the image generation, focusing
+                on attributes that enhance realism and relevance, such as scene composition, lighting,
+                and perspective. Include
+                specific photo settings, such as lens, aperture,
+                shutter speed, ISO, and any other relevant
+                details that would help the AI generate the most
+                hyper-photo-realistic photo possible.Avoid including
+                hands or text in the image. Synthesize this
+                analysis into a concise DALL-E prompt aimed at producing
+                an engaging and contextually appropriate image."""
+            }
+        ]
+    else:
+        messages = [
+            {
+                "role": "system",
+                "content": f"""Given a social media post {post} and its context {prompt}
+                for a specified platform {platform}, create a DALL-E prompt for generating
+                an image in the style of {image_style} that maximizes engagement. Consider the post's content,
+                target audience, and platform specifics to identify key visual elements.
+                Synthesize this analysis into a concise DALL-E prompt aimed at producing
+                an engaging and contextually appropriate image."""
+            }
+        ]
     try:
         response = client.chat.completions.create(
             model="gpt-4-turbo-preview",

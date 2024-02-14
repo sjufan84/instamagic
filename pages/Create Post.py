@@ -7,6 +7,38 @@ from utils.image_utils import encode_image, heic_to_base64
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+dall_e_image_styles = [
+    "Photorealistic",
+    "Digital Art",
+    "Graphic Art",
+    "Oil Painting",
+    "Watercolor Painting",
+    "Ink Drawing",
+    "Pencil Sketch",
+    "Charcoal Drawing",
+    "Pastel Drawing",
+    "Abstract Art",
+    "Surrealism",
+    "Pop Art",
+    "Concept Art",
+    "Pixel Art",
+    "Minimalist Art",
+    "Vintage Photography",
+    "Street Art",
+    "3D Render",
+    "Anime/Manga Style",
+    "Storybook Illustration",
+    "Fantasy Art",
+    "Sci-Fi Art",
+    "Gothic Art",
+    "Art Nouveau",
+    "Art Deco",
+    "Cubism",
+    "Impressionism",
+    "Other"
+]
+
+
 post_tones = [
     "Happy - conveys joy and positivity",
     "Angry - expresses frustration or displeasure",
@@ -128,12 +160,12 @@ session_vars = [
     "verbosity", "current_post", "current_images",
     "post_page", "post_details", "generate_image",
     "current_image_prompt", "display_post_page",
-    "image_size_choices", "user_image_string"
+    "image_size_choices", "user_image_string", "image_style"
 ]
 default_values = [
     None, None, None, None, 3, None, [],
     "Create Post", None, False, None, "display_home",
-    [], None
+    [], None, "Photorealistic"
 ]
 
 for var, default_value in zip(session_vars, default_values):
@@ -157,6 +189,16 @@ def other_tone():
     """ Other Tone option if use selects "Other" """
     other_tone = st.text_input("Please specify the tone you would like to convey")
     return other_tone
+
+def image_style_select(image_style_options: List[str]):
+    """ Image Style Selection """
+    image_style = st.selectbox("What style of image would you like to generate?", image_style_options)
+    return image_style
+
+def image_style_other():
+    """ Other Image Style option if use selects "Other" """
+    other_image_style = st.text_input("Please specify the image style you would like to generate")
+    return other_image_style
 
 def purpose_select(purpose_options: List[str]):
     """ Purpose Selection """
@@ -218,14 +260,14 @@ def create_post_home():
     logger.debug(f"Selected tone: {tone}")
     verbosity = set_verbosity()
     logger.debug(f"Selected verbosity: {verbosity}")
-    st.write("Verbosity: ", verbosity)
+    # st.write("Verbosity: ", verbosity)
     details = post_details()
     generate_image = get_image_selection()
     if generate_image:
         st.session_state.generate_image = True
         picture_mode = st.selectbox(
-        '###### 📸 Snap a Pic, 📤 Upload an Image, or Let Us Generate One For You!',
-        ("Snap a pic", "Upload an image", "Let Us Generate One For You"), index=None,
+            '###### 📸 Snap a Pic, 📤 Upload an Image, or Let Us Generate One For You!',
+            ("Snap a pic", "Upload an image", "Let Us Generate One For You"), index=None,
         )
         if picture_mode == "Snap a pic":
             uploaded_image = st.camera_input("Snap a pic")
@@ -253,6 +295,9 @@ def create_post_home():
                 st.session_state.user_image_string = image_string
         elif picture_mode == "Let Us Generate One For You":
             st.session_state.user_image_string = None
+        image_style = image_style_select(dall_e_image_styles)
+        if image_style == "Other":
+            image_style = image_style_other()
         st.markdown("**Choose the image size(s) for your post:**")
         square_choice = st.checkbox("Square", value=False)
         stories_choice = st.checkbox("Stories", value=False)
@@ -273,6 +318,8 @@ def create_post_home():
         st.session_state.post_details = details
         st.session_state.post_page = "Display Post"
         st.session_state.generate_image = generate_image
+        if generate_image:
+            st.session_state.image_style = image_style
         switch_page("Post Display")
 
 if __name__ == "__main__":

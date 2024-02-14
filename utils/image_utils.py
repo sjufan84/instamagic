@@ -1,7 +1,6 @@
 import logging
 import base64
 import io
-import streamlit as st
 from pydantic import BaseModel, Field
 from openai import OpenAIError
 from dependencies import get_openai_client
