@@ -7,6 +7,13 @@ from streamlit_extras.switch_page_button import switch_page
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+st.set_page_config(
+    page_title="INSTAMAGIC",
+    page_icon="🔮",
+    layout="centered",
+    initial_sidebar_state="collapsed",
+)
+
 # Import Google Font in Streamlit CSS
 st.markdown(
     """

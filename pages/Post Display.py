@@ -3,6 +3,13 @@ from utils.post_utils import generate_post, get_image_prompt, alter_image
 from utils.image_utils import create_image
 from streamlit_extras.switch_page_button import switch_page
 
+st.set_page_config(
+    page_title="INSTAMAGIC",
+    page_icon="🔮",
+    layout="centered",
+    initial_sidebar_state="collapsed",
+)
+
 if "display_post_page" not in st.session_state:
     st.session_state.display_post_page = "display_home"
 

@@ -7,6 +7,13 @@ from utils.image_utils import encode_image, heic_to_base64
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+st.set_page_config(
+    page_title="INSTAMAGIC",
+    page_icon="🔮",
+    layout="centered",
+    initial_sidebar_state="collapsed",
+)
+
 dall_e_image_styles = [
     "Photorealistic",
     "Digital Art",
