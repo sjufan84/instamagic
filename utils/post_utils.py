@@ -18,9 +18,9 @@ def generate_post(
     messages = [
         {
             "role": "system", "content": f"""
-            You are a helpful assistant helping the user generate posts for their social media or
+            You are a social media expert helping the user generate posts for
             just general content based on their parameters.  Optimize the content based on the purpose
-            {purpose} of their post?, the platform {platform} they are posting on (if any),
+            {purpose} of their post, the platform {platform} they are posting on (if any),
             the persona {persona} they would like to embody (if any),
             and the tone {tone} they would like to convey (if any).
             On a scale of 1 to 5, their desired verbosity level is {verbosity}.  The details
@@ -183,4 +183,65 @@ def get_image_prompt(post: str, prompt: str, platform: str = None, image_style: 
         return prompt_response
     except OpenAIError as e:
         logger.error(f"Error generating prompt for image generation: {e}")
+        return None
+
+def edit_post(post: str, requested_adjustments: str):
+    """ Edit a post based on user feedback """
+    messages = [
+        {
+            "role": "system", "content": f"""
+            You are a helpful assistant helping the user edit their social media post.  The user has
+            requested the following adjustments: {requested_adjustments}.  The original post is:
+            {post}.  Return the edited post with the requested adjustments."""
+        },
+    ]
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4-turbo-preview",
+            messages=messages,
+            max_tokens=500,
+        )
+        logger.debug(f"Response: {response}")
+        return response.choices[0].message.content
+    except OpenAIError as e:
+        logger.error(f"Error editing post: {e}")
+        return None
+
+def get_new_image_prompt(original_prompt: str, original_image: str, requested_adjustments: str):
+    """ Generate a new dall-e prompt based on the user prompt and the image """
+    messages = [
+        {
+            "role": "system", "content": [
+                {
+                    "type": "text",
+                    "text": f"""
+                    Given the original DALL-E prompt {original_prompt} and the original image,
+                    create a new DALL-E prompt for generating an image that incorporates the
+                    requested adjustments {requested_adjustments}.  The original image is:
+                    """
+                },
+            ]
+        },
+        {
+            "role" : "system", "content" : [
+                {
+                    "type" : "text", "text" : "This is the original image that was generated:"
+                },
+                {
+                    "type" : "image_url", "image_url" : f"""data:image/jpeg;base64,
+                    {st.session_state.user_image_string}"""
+                }
+            ]
+        }
+    ]
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4-turbo-preview",
+            messages=messages,
+            max_tokens=500,
+        )
+        logger.debug(f"Response: {response}")
+        return response.choices[0].message.content
+    except OpenAIError as e:
+        logger.error(f"Error generating prompt for image alteration: {e}")
         return None
