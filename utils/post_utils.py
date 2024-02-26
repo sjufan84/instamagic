@@ -12,7 +12,7 @@ client = get_openai_client()
 if "current_post" not in st.session_state:
     st.session_state.current_post = None
 
-def generate_post(
+async def generate_post(
         purpose: str, persona: str = None, tone: str = None, platform: str = None, verbosity: int = 3,
         details: str = None):
     messages = [
@@ -53,7 +53,7 @@ def generate_post(
         st.write(st.session_state.current_post)
         st.session_state.current_post = None
 
-def alter_image(
+async def alter_image(
         image_url: str, post: str, prompt: str, platform: str = None,
         image_style: str = "Photorealistic"):
     """ Generate a new dall-e prompt based on the user prompt and the image """
@@ -138,7 +138,7 @@ def alter_image(
         return None
 
 
-def get_image_prompt(post: str, prompt: str, platform: str = None, image_style: str = "Photorealistic"):
+async def get_image_prompt(post: str, prompt: str, platform: str = None, image_style: str = "Photorealistic"):
     if image_style == "Photorealistic":
         messages = [
             {

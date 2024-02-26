@@ -27,7 +27,7 @@ class ImageRequest(BaseModel):
     """ Image Request Model """
     prompt: str = Field(..., title="Prompt", description="The prompt to generate an image from.")
 
-def create_image(prompt : str, size_choice : str):
+async def create_image(prompt : str, size_choice : str):
     """ Generate an image from the given image request. """
     logger.debug(f"Generating image for prompt: {prompt} with size: {size_choice}")
     # Generate the image
@@ -35,14 +35,16 @@ def create_image(prompt : str, size_choice : str):
         size = "1024x1024"
     elif size_choice == "Stories":
         size = "1024x1792"
+    elif size_choice == "Landscape":
+        size = "1792x1024"
     try:
         response = client.images.generate(
             prompt=prompt,
             model="dall-e-3",
             size=size,
-            quality="standard",
+            quality="hd",
             n=1,
-            style="vivid",
+            # style="vivid",
             response_format="b64_json"
         )
         decoded_image = decode_image(image_data=response.data[0].b64_json, image_name="image.png")
