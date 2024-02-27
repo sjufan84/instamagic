@@ -188,6 +188,10 @@ for var, default_value in zip(session_vars, default_values):
     if var not in st.session_state:
         st.session_state[var] = default_value
 
+def reset_session_state():
+    for var, default_value in zip(session_vars, default_values):
+        st.session_state[var] = default_value
+
 def get_image_selection():
     """ Image Selection """
     image_selection = st.radio(
@@ -198,7 +202,8 @@ def get_image_selection():
     else:
         return False
 
-async def create_post_home():
+def create_post_home():
+    reset_session_state()
     st.markdown("### Create a New Post")
     square_choice = None
     stories_choice = None
@@ -307,9 +312,6 @@ async def create_post_home():
         st.rerun()
 
 def edit_post_page():
-    square_choice = None
-    stories_choice = None
-    landscape_choice = None
     st.markdown("### Edit Your Post")
     purpose = st.selectbox(
         "What is the purpose of your post?",
@@ -345,72 +347,19 @@ def edit_post_page():
         value=st.session_state.post_details
     )
 
-    generate_image = get_image_selection()
-    if generate_image:
-        st.session_state.generate_image = True
-        picture_mode = st.selectbox(
-            '###### 📸 Snap a Pic, 📤 Upload an Image, or Let Us Generate One For You!',
-            ("Snap a pic", "Upload an image", "Let Us Generate One For You"), index=None,
-        )
-        if picture_mode == "Snap a pic":
-            uploaded_image = st.camera_input("Snap a pic")
-            if uploaded_image:
-                if uploaded_image.name.endswith(".heic") or uploaded_image.name.endswith(".HEIC"):
-                    image_string = heic_to_base64(uploaded_image)
-                    st.session_state.user_image_string = image_string
-                else:
-                    image_string = encode_image(uploaded_image)
-                st.session_state.user_image_string = image_string
-
-        elif picture_mode == "Upload an image":
-            # Show a file upoloader that only accepts image files
-            uploaded_image = st.file_uploader(
-                "Upload an image", type=["png", "jpg", "jpeg", "heic", "HEIC"]
-            )
-            # Convert the image to a base64 string
-            if uploaded_image:
-                # If the file type is .heic or .HEIC, convert to a .png using PIL
-                if uploaded_image.name.endswith(".heic") or uploaded_image.name.endswith(".HEIC"):
-                    image_string = heic_to_base64(uploaded_image)
-                    st.session_state.user_image_string = image_string
-                else:
-                    image_string = encode_image(uploaded_image)
-                st.session_state.user_image_string = image_string
-        elif picture_mode == "Let Us Generate One For You":
-            st.session_state.user_image_string = None
-        image_style = image_style_select(dall_e_image_styles)
-
-        st.markdown("**Choose the image size(s) for your post:**")
-        square_choice = st.checkbox("Square", value=False)
-        stories_choice = st.checkbox("Stories", value=False)
-        landscape_choice = st.checkbox("Landscape", value=False)
-
-        # If neither are checked, display a warning
-        if not square_choice and not stories_choice and not landscape_choice:
-            st.warning("Please select at least one image size.")
-
     create_new_post_button = st.button("Create New Post")
     if create_new_post_button:
-        if square_choice:
-            st.session_state.image_size_choices.append("Square")
-        if stories_choice:
-            st.session_state.image_size_choices.append("Stories")
-        if landscape_choice:
-            st.session_state.image_size_choices.append("Landscape")
         st.session_state.purpose = purpose
         st.session_state.persona = persona
         st.session_state.tone = tone
         st.session_state.platform = platform
         st.session_state.verbosity = verbosity
         st.session_state.post_details = details
-        st.session_state.generate_image = generate_image
-        if generate_image:
-            st.session_state.image_style = image_style
         st.session_state.post_page = "Display Post"
         st.rerun()
 
 async def display_post():
-    st.markdown("##### Here's your post!")
+    st.markdown("#### Here's your post!")
     post = await generate_post(
         st.session_state.purpose,
         st.session_state.persona,
@@ -422,10 +371,11 @@ async def display_post():
         st.write(post)
         st.session_state.current_post = post
 
-    st.markdown("**If you would like to make any changes to your post,\
-    you can simply change anything within the form above and resubmit!**")
+    edit_post_button = st.button("Edit Post", use_container_width=True)
+    if edit_post_button:
+        edit_post_page()
 
-    if st.session_state.generate_image:
+    if st.session_state.generate_image and st.session_state.current_images == []:
         if st.session_state.user_image_string:
             with st.spinner("Generating image.  This may take a few moments..."):
                 image_prompt = await alter_image(
@@ -440,6 +390,7 @@ async def display_post():
                     for size_choice in st.session_state.image_size_choices:
                         image = await create_image(image_prompt, size_choice)
                         st.session_state.current_images.append(image)
+                        st.image(image, use_column_width=True)
 
         else:
             with st.spinner("Generating image(s).  This may take a few moments..."):
@@ -455,38 +406,18 @@ async def display_post():
                     for size_choice in st.session_state.image_size_choices:
                         image = await create_image(image_prompt, size_choice)
                         st.session_state.current_images.append(image)
+                        st.image(image, use_column_width=True)
 
-    if st.session_state.current_images != []:
-        st.markdown("### Your generated images:")
+    elif st.session_state.current_images != []:
         for image in st.session_state.current_images:
             st.image(image, use_column_width=True)
 
-    edit_post_button = st.button("Edit Post")
-    if edit_post_button:
-        edit_post_page()
-        st.session_state.image_size_choices = []
-
-    generate_new_post = st.button("Generate New Post")
+    generate_new_post = st.button("Start Over", use_container_width=True)
     if generate_new_post:
         st.session_state.post_page = "Create Post"
-        st.session_state.current_post = None
-        st.session_state.current_images = []
-        st.session_state.generate_image = False
-        st.session_state.user_image_string = None
-        st.session_state.image_style = "Photorealistic"
-        st.session_state.requested_post_adjustments = None
-        st.session_state.requested_image_adjustments = None
-        st.session_state.post_details = ""
-        st.session_state.verbosity = 3
-        st.session_state.purpose = None
-        st.session_state.persona = None
-        st.session_state.tone = None
-        st.session_state.platform = None
-        st.session_state.image_size_choices = []
-        st.session_state.current_image_prompt = None
         st.rerun()
 
 if st.session_state.post_page == "Create Post":
-    asyncio.run(create_post_home())
+    create_post_home()
 elif st.session_state.post_page == "Display Post":
     asyncio.run(display_post())
