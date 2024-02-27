@@ -321,26 +321,35 @@ def create_post_home():
 
 def edit_post_page():
     st.markdown("### Edit Your Post")
-    purpose = st.selectbox(
-        "What is the purpose of your post?",
-        options=post_purposes, index=post_purposes.index(st.session_state.purpose)
-    )
+    if st.session_state.purpose not in post_purposes:
+        purpose = st.text_input("Please specify the purpose of your post", value=st.session_state.purpose)
+    else:
+        purpose = st.selectbox(
+            "What is the purpose of your post?",
+            options=post_purposes, index=post_purposes.index(st.session_state.purpose)
+        )
     logger.debug(f"Selected purpose: {purpose}")
 
     platform = st.selectbox(
         "Which platform are you posting on, if any?",
         options=platform_options, index=platform_options.index(st.session_state.platform)
     )
-
-    persona = st.selectbox(
-        "What persona would you like to embody for this post?",
-        options=personas, index=personas.index(st.session_state.persona)
-    )
-
-    tone = st.selectbox(
-        "What tone would you like to convey in your post?",
-        options=post_tones, index=post_tones.index(st.session_state.tone)
-    )
+    if st.session_state.persona not in personas:
+        persona = st.text_input("Please specify the persona you would like to embody", value=st.session_state.persona)
+    else:
+        persona = st.selectbox(
+            "What persona would you like to embody for this post?",
+            options=personas, index=personas.index(st.session_state.persona)
+        )
+    logger.debug(f"Selected persona: {persona}")
+    if st.session_state.tone not in post_tones:
+        tone = st.text_input("Please specify the tone you would like to convey", value=st.session_state.tone)
+    else:
+        tone = st.selectbox(
+            "What tone would you like to convey in your post?",
+            options=post_tones, index=post_tones.index(st.session_state.tone)
+        )
+    logger.debug(f"Selected tone: {tone}")
 
     verbosity = st.slider(
         "How verbose would you like your post to be?\
