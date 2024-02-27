@@ -123,6 +123,7 @@ post_purposes = sorted([
     "Science and Discovery",
     "Cultural Experience",
     "Daily Thoughts or Reflections",
+    "Other",
 ])
 
 personas = sorted([
@@ -155,7 +156,8 @@ personas = sorted([
     "Volunteer",
     "Parent",
     "Student",
-    "Professional"
+    "Professional",
+    "Other",
 ])
 
 platform_options = sorted([
@@ -224,12 +226,16 @@ def create_post_home():
         "What persona would you like to embody for this post?",
         options=personas, index=0
     )
+    if persona == "Other":
+        persona = st.text_input("Please specify the persona you would like to embody")
     logger.debug(f"Selected persona: {persona}")
 
     tone = st.selectbox(
         "What tone would you like to convey in your post?",
         options=post_tones, index=0
     )
+    if tone == "Other":
+        tone = st.text_input("Please specify the tone you would like to convey")
     logger.debug(f"Selected tone: {tone}")
 
     verbosity = st.slider(
