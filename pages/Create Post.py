@@ -360,6 +360,7 @@ def edit_post_page():
 
 async def display_post():
     st.markdown("#### Here's your post!")
+    generating_images = False
     post = await generate_post(
         st.session_state.purpose,
         st.session_state.persona,
@@ -386,11 +387,13 @@ async def display_post():
                     st.session_state.image_style
                 )
                 if image_prompt:
+                    generating_images = True
                     st.write("Prompt generated, now creating image(s)...")
                     for size_choice in st.session_state.image_size_choices:
                         image = await create_image(image_prompt, size_choice)
                         st.session_state.current_images.append(image)
                         st.image(image, use_column_width=True)
+                generating_images = False
 
         else:
             with st.spinner("Generating image(s).  This may take a few moments..."):
@@ -402,13 +405,15 @@ async def display_post():
                 )
 
                 if image_prompt:
+                    generating_images = True
                     st.write("Prompt generated, now creating image(s)...")
                     for size_choice in st.session_state.image_size_choices:
                         image = await create_image(image_prompt, size_choice)
                         st.session_state.current_images.append(image)
                         st.image(image, use_column_width=True)
+                generating_images = False
 
-    elif st.session_state.current_images != []:
+    elif st.session_state.current_images != [] and generating_images is False:
         for image in st.session_state.current_images:
             st.image(image, use_column_width=True)
 
