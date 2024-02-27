@@ -153,12 +153,13 @@ session_vars = [
     "post_page", "post_details", "generate_image",
     "current_image_prompt", "display_post_page",
     "image_size_choices", "user_image_string", "image_style",
-    "requested_post_adjustments", "requested_image_adjustments"
+    "requested_post_adjustments", "requested_image_adjustments",
+    "post_status"
 ]
 default_values = [
     None, None, None, None, 3, None, [],
-    "Create Post", None, False, None, "display_home",
-    [], None, "Photorealistic", None, None
+    "Create Post", "", False, None, "display_home",
+    [], None, "Photorealistic", None, None, "Create Post"
 ]
 
 for var, default_value in zip(session_vars, default_values):
@@ -172,53 +173,66 @@ def reset_session_state():
 def set_image_selection(image_selection: bool):
     st.session_state.generate_image = image_selection
 
-def post_details():
-    post_details = st.text_area("""Let us know about the details of your post
-    This could be a description of your dining experience, notes about the book you just read
-    or a summary of your recent travel adventure.  Give the basic framework of your post and
-    let us do the rest!""")
+def post_details(value: str = ""):
+    post_details = st.text_area(
+        """Let us know about the details of your post
+        This could be a description of your dining experience, notes about the book you just read
+        or a summary of your recent travel adventure.  Give the basic framework of your post and
+        let us do the rest!""",
+        placeholder=value
+    )
     return post_details
 
-def tone_select(tone_options: List[str]):
+def tone_select(tone_options: List[str], index: int = 0):
     """ Tone Selection """
-    tone = st.selectbox("What tone would you like to convey in your post?\
-    (Select 'Other' if you do not find the appropriate option')", tone_options)
+    tone = st.selectbox(
+        "What tone would you like to convey in your post?\
+        (Select 'Other' if you do not find the appropriate option')", tone_options,
+        index = index
+    )
     return tone
 
-def image_style_select(image_style_options: List[str]):
+def image_style_select(image_style_options: List[str], index: int = 0):
     """ Image Style Selection """
-    image_style = st.selectbox("What style of image would you like to generate?", image_style_options)
+    image_style = st.selectbox(
+        "What style of image would you like to generate?", image_style_options,
+        index = index
+    )
     return image_style
 
-def purpose_select(purpose_options: List[str]):
+def purpose_select(purpose_options: List[str], index: int = 0):
     """ Purpose Selection """
-    purpose = st.selectbox("What is the purpose of your post?  (Select 'Other' if\
-    you do not find the appropriate option')", purpose_options)
+    purpose = st.selectbox(
+        "What is the purpose of your post?  (Select 'Other' if\
+    you do not find the appropriate option')", purpose_options,
+        index = index
+    )
     return purpose
 
-def persona_select(persona_options: List[str]):
+def persona_select(persona_options: List[str], index: int = 0):
     """ Persona Selection """
     # Set the value to the index of the persona session state if it exists
     persona = st.selectbox(
         "What persona would you like to embody for this post?", options=persona_options,
-        index = 0 if st.session_state.persona is None else persona_options.index(st.session_state.persona)
+        index = index
     )
     return persona
 
-def platform_select(platform_options: List[str]):
+def platform_select(platform_options: List[str], index: int = 0):
     """ Platform Selection """
     platform = st.selectbox(
         "Which platform are you posting on, if any?", options=platform_options,
-        index = 0 if st.session_state.platform is None else platform_options.index(st.session_state.platform)
+        index = index
     )
     return platform
 
-def set_verbosity():
+def set_verbosity(value: int = 3):
     """ Verbosity Selection """
     verbosity = st.slider(
         "How verbose would you like your post to be?\
         (1 being very brief, 5 being very detailed)", 1, 5,
-        value=3 if st.session_state.verbosity is None else st.session_state.verbosity)
+        value=value
+    )
     return verbosity
 
 def get_image_selection():
@@ -231,26 +245,71 @@ def get_image_selection():
     else:
         return False
 
-def create_post_form():
+async def create_post_form(post_status: str = "Create Post"):
+    st.write(st.session_state.current_post)
+    st.write(st.session_state.post_details)
+    st.write(st.session_state.post_status)
     square_choice = None
     stories_choice = None
     landscape_choice = None
-    purpose = purpose_select(post_purposes)
-    logger.debug(f"Selected purpose: {purpose}")
+    if post_status == "Create Post":
+        purpose = st.selectbox(
+            "What is the purpose of your post?",
+            options=post_purposes, index=0
+        )
+        logger.debug(f"Selected purpose: {purpose}")
 
-    platform = platform_select(platform_options)
-    logger.debug(f"Selected platform: {platform}")
+        platform = st.selectbox(
+            "Which platform are you posting on, if any?",
+            options=platform_options, index=0
+        )
+        logger.debug(f"Selected platform: {platform}")
 
-    persona = persona_select(personas)
-    logger.debug(f"Selected persona: {persona}")
+        persona = st.selectbox(
+            "What persona would you like to embody for this post?",
+            options=personas, index=0
+        )
+        logger.debug(f"Selected persona: {persona}")
 
-    tone = tone_select(post_tones)
-    logger.debug(f"Selected tone: {tone}")
+        tone = st.selectbox(
+            "What tone would you like to convey in your post?",
+            options=post_tones, index=0
+        )
+        logger.debug(f"Selected tone: {tone}")
 
-    verbosity = set_verbosity()
-    logger.debug(f"Selected verbosity: {verbosity}")
+        verbosity = st.slider(
+            "How verbose would you like your post to be?\
+            (1 being very brief, 5 being very detailed)", 1, 5, value=3
+        )
+        logger.debug(f"Selected verbosity: {verbosity}")
 
-    details = post_details()
+        details = st.text_area(
+            """Let us know about the details of your post
+            This could be a description of your dining experience, notes about the book you just read
+            or a summary of your recent travel adventure.  Give the basic framework of your post and
+            let us do the rest!""",
+            placeholder=""
+        )
+        logger.debug(f"Selected post details: {details}")
+
+    elif post_status == "Edit Post":
+        purpose = purpose_select(post_purposes, post_purposes.index(st.session_state.purpose))
+        logger.debug(f"Selected purpose: {purpose}")
+
+        platform = platform_select(platform_options, platform_options.index(st.session_state.platform))
+        logger.debug(f"Selected platform: {platform}")
+
+        persona = persona_select(personas, personas.index(st.session_state.persona))
+        logger.debug(f"Selected persona: {persona}")
+
+        tone = tone_select(post_tones, post_tones.index(st.session_state.tone))
+        logger.debug(f"Selected tone: {tone}")
+
+        verbosity = set_verbosity(st.session_state.verbosity)
+        logger.debug(f"Selected verbosity: {verbosity}")
+
+        details = post_details(st.session_state.post_details)
+        logger.debug(f"Selected post details: {details}")
 
     generate_image = get_image_selection()
     if generate_image:
