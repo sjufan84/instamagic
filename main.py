@@ -214,6 +214,8 @@ def create_post_home():
         "What is the purpose of your post?",
         options=post_purposes, index=0
     )
+    if purpose == "Other":
+        purpose = st.text_input("Please specify the purpose of your post")
     logger.debug(f"Selected purpose: {purpose}")
 
     platform = st.selectbox(
