@@ -1,9 +1,10 @@
 import streamlit as st
 from typing import List
 import asyncio
+import io
 import logging
 # from streamlit_extras.switch_page_button import switch_page
-from utils.image_utils import encode_image, heic_to_base64
+from utils.image_utils import encode_image, heic_to_base64, encode_pil_image
 from utils.post_utils import (
     generate_post, get_image_prompt, alter_image,
     edit_post, get_new_image_prompt
@@ -19,6 +20,18 @@ st.set_page_config(
     layout="centered",
     initial_sidebar_state="collapsed",
 )
+
+# Step 4: Create Download Link
+def get_image_download_link(image, filename="downloaded_image.png", key: str = None):
+    buffered = io.BytesIO()
+    image.save(buffered, format="PNG")
+    return st.download_button(
+        label="Download Image",
+        data=buffered.getvalue(),
+        file_name=filename,
+        use_container_width=True,
+        key=key
+    )
 
 def image_style_select(image_style_options: List[str], index: int = 0):
     """ Image Style Selection """
@@ -259,7 +272,8 @@ def create_post_home():
     if generate_image:
         st.session_state.generate_image = True
         picture_mode = st.selectbox(
-            '###### 📸 Snap a Pic, 📤 Upload an Image, or Let Us Generate One For You!',
+            '###### 📸 Snap a Pic, 📤 Upload an Image, or Let Us Generate One For You! If you take a picture\
+            or upload an image, the AI will use that image as the basis for its generation.',
             ("Snap a pic", "Upload an image", "Let Us Generate One For You"), index=None,
         )
         if picture_mode == "Snap a pic":
@@ -375,7 +389,9 @@ def edit_post_page():
         st.session_state.post_page = "Display Post"
         st.rerun()
 
+
 async def display_post():
+    st.write(st.session_state.current_image_prompt)
     st.markdown("#### Here's your post!")
     generating_images = False
     post = await generate_post(
@@ -404,11 +420,12 @@ async def display_post():
                     st.session_state.image_style
                 )
                 if image_prompt:
+                    st.session_state.current_image_prompt = image_prompt
                     generating_images = True
                     st.write("Prompt generated, now creating image(s)...")
                     for size_choice in st.session_state.image_size_choices:
                         image = await create_image(image_prompt, size_choice)
-                        st.session_state.current_images.append(image)
+                        st.session_state.current_images.append((image, size_choice))
                         st.image(image, use_column_width=True)
                 generating_images = False
 
@@ -420,20 +437,40 @@ async def display_post():
                     st.session_state.platform,
                     st.session_state.image_style
                 )
-
                 if image_prompt:
+                    st.session_state.current_image_prompt = image_prompt
                     generating_images = True
                     st.write("Prompt generated, now creating image(s)...")
                     for size_choice in st.session_state.image_size_choices:
                         image = await create_image(image_prompt, size_choice)
-                        st.session_state.current_images.append(image)
+                        st.session_state.current_images.append((image, size_choice))
                         st.image(image, use_column_width=True)
                 generating_images = False
 
     elif st.session_state.current_images != [] and generating_images is False:
-        for image in st.session_state.current_images:
-            st.image(image, use_column_width=True)
-
+        for i, image in enumerate(st.session_state.current_images):
+            st.image(image[0], use_column_width=True)
+            # Create a download link for the image
+            download_link = get_image_download_link(image[0], key=f"download_image_{i}")
+            st.markdown(download_link, unsafe_allow_html=True)
+            requested_changes = st.text_area(
+                "Want to request adjustments to this image?  Let us know here!", value="",
+                key=f"requested_changes_{i}"
+            )
+            request_changes_button = st.button("Request Changes", key=f"request_changes_{i}")
+            if request_changes_button:
+                st.session_state.requested_image_adjustments = requested_changes
+                new_image_prompt = await get_new_image_prompt(
+                    original_prompt=st.session_state.current_image_prompt,
+                    original_image = encode_image(image[0]),
+                    requested_adjustments = requested_changes
+                )
+                # Replace the old image with the new one in the current_images list
+                st.session_state.current_images.remove(image)
+                new_image = await create_image(new_image_prompt, image[1])
+                st.session_state.current_images.append((new_image, image[1]))
+                st.rerun()
+  
     generate_new_post = st.button("Start Over", use_container_width=True)
     if generate_new_post:
         st.session_state.post_page = "Create Post"

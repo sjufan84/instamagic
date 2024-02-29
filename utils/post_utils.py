@@ -207,7 +207,7 @@ def edit_post(post: str, requested_adjustments: str):
         logger.error(f"Error editing post: {e}")
         return None
 
-def get_new_image_prompt(original_prompt: str, original_image: str, requested_adjustments: str):
+async def get_new_image_prompt(original_prompt: str, original_image: str, requested_adjustments: str):
     """ Generate a new dall-e prompt based on the user prompt and the image """
     messages = [
         {
@@ -236,7 +236,7 @@ def get_new_image_prompt(original_prompt: str, original_image: str, requested_ad
     ]
     try:
         response = client.chat.completions.create(
-            model="gpt-4-turbo-preview",
+            model="gpt-4-vision-preview",
             messages=messages,
             max_tokens=500,
         )

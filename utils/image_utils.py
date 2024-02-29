@@ -75,3 +75,14 @@ def heic_to_base64(heic_path):
 
 def encode_image(image_file):
     return base64.b64encode(image_file.read()).decode('utf-8')
+
+# Encode PIL Image to Base64
+def encode_pil_image(image):
+    """ Encode the given PIL image to Base64. """
+    # Create an in-memory file object
+    buffer = io.BytesIO()
+    # Save the image to the in-memory file object
+    image.save(buffer, format="PNG")
+    # Encode to Base64
+    image_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    return image_base64
