@@ -194,6 +194,10 @@ def select_persona(personas, current_persona):
             "What persona would you like to embody for this post?",
             options=personas, index=personas.index(current_persona)
         )
+        if persona == "Other":
+            persona = st.text_input(
+                "Please specify the persona you would like to embody",
+                value=current_persona)
     return persona
 
 def select_tone(post_tones, current_tone):
@@ -206,6 +210,10 @@ def select_tone(post_tones, current_tone):
             "What tone would you like to convey in your post?",
             options=post_tones, index=post_tones.index(current_tone)
         )
+        if tone == "Other":
+            tone = st.text_input(
+                "What tone would you like to convey in your post?",
+                value=current_tone)
     return tone
 
 def select_verbosity(current_verbosity):
@@ -214,6 +222,7 @@ def select_verbosity(current_verbosity):
         (1 being very brief and perfect for X, 5 being very detailed)",
         1, 5, value=current_verbosity
     )
+
     return verbosity
 
 def input_details(current_details):
@@ -234,6 +243,10 @@ def select_purpose(post_purposes, current_purpose):
             "What is the purpose of your post?",
             options=post_purposes, index=post_purposes.index(current_purpose)
         )
+    if purpose == "Other":
+        purpose = st.text_input(
+            "Please specify the purpose of your post",
+            value=current_purpose)
     logger.debug(f"Selected purpose: {purpose}")
     return purpose
 
@@ -315,6 +328,7 @@ def select_image():
 
 async def main():
     st.title("Post Generator")
+    post = None
     post_container = st.empty()
     images_container = st.empty()
     current_values = {
@@ -325,19 +339,35 @@ async def main():
         'details': "",
         'purpose': "Other"
     }
+    form_values = None
 
     with post_container.container():
-        form_values = create_form(platform_options, personas, post_tones, post_purposes, current_values)
-    image_values = select_image()
+        platform = select_platform(platform_options, current_values['platform'])
+        persona = select_persona(personas, current_values['persona'])
+        if persona == "Other":
+            persona = st.text_input(
+                "Please specify the persona you would like to embody",
+                value=current_values['persona'])
+        tone = select_tone(post_tones, current_values['tone'])
+        verbosity = select_verbosity(current_values['verbosity'])
+        details = input_details(current_values['details'])
+        purpose = select_purpose(post_purposes, current_values['purpose'])
 
-    if form_values:
-        # Call the generate_post function with the form_values
-        post = await generate_post(form_values)
-        with post_container.container():
-            st.write(post)
-    if image_values:
-        st.write(image_values)
+        submit_button = st.button(label='Generate Post!')
 
+    if submit_button:
+        form_values = {
+            'platform': platform,
+            'persona': persona,
+            'tone': tone,
+            'verbosity': verbosity,
+            'details': details,
+            'purpose': purpose
+        }
+    # Call the generate_post function with the form_values
+    post = await generate_post(form_values)
+    if post:
+        post_container.markdown(post)
 
 if __name__ == "__main__":
     asyncio.run(main())

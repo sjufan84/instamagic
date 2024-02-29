@@ -33,11 +33,14 @@ def get_image_download_link(image, filename="downloaded_image.png", key: str = N
         key=key
     )
 
-def image_style_select(image_style_options: List[str], index: int = 0):
+def image_style_select(image_style_options: List[str], index: int = None):
     """ Image Style Selection """
+    if index is None:
+        # Set the index to the location of the "Photorealistic" option
+        index = image_style_options.index("Photorealistic")
     image_style = st.selectbox(
-        "What style of image would you like to generate?", image_style_options,
-        index = index
+        "If you'd like an image style other than 'Photorealistic', specify below",
+        image_style_options, index = index
     )
     return image_style
 
@@ -277,8 +280,8 @@ def create_post_home():
     if generate_image:
         st.session_state.generate_image = True
         picture_mode = st.selectbox(
-            '###### 📸 Snap a Pic, 📤 Upload an Image, or Let Us Generate One For You! If you take a picture\
-            or upload an image, the AI will use that image as the basis for its generation.',
+            '###### 📸 Snap a Pic, 📤 Upload an Image and we\'ll enhance it,\
+            or Let Us Generate One For You!',
             ("Snap a pic", "Upload an image", "Let Us Generate One For You"), index=None,
         )
         if picture_mode == "Snap a pic":
@@ -401,9 +404,6 @@ def edit_post_page():
 
 
 async def display_post():
-    new_image = st.session_state.current_images[0][0].save("test_image.png")
-    buffered = io.BytesIO()
-    st.session_state.current_images[0][0].save(buffered, format="PNG")
     st.markdown("#### Here's your post!")
     generating_images = False
     post = await generate_post(
