@@ -171,6 +171,7 @@ personas = sorted([
     "Student",
     "Professional",
     "Other",
+    "None",
 ])
 
 platform_options = sorted([
@@ -219,12 +220,16 @@ def get_image_selection():
 
 def create_post_home():
     reset_session_state()
-    st.markdown("### Create a New Post")
+    st.markdown("""##### *Welcome to Tasty Update – the future of content creation!\
+    Say goodbye to content struggles and hello to effortless creativity.\
+    Easily turn your ideas into engaging posts, then share them on all your\
+    favorite platforms in a snap!*""")
     square_choice = None
     stories_choice = None
     landscape_choice = None
     purpose = st.selectbox(
-        "What is the purpose of your post?",
+        "What is the purpose of your post? (Select 'Other' if you\
+        do not find the appropriate option)",
         options=post_purposes, index=0
     )
     if purpose == "Other":
@@ -232,17 +237,18 @@ def create_post_home():
     logger.debug(f"Selected purpose: {purpose}")
 
     platform = st.selectbox(
-        "Which platform are you posting on, if any?",
+        "Which platform should we optimize this post for?",
         options=platform_options, index=0
     )
     logger.debug(f"Selected platform: {platform}")
 
     persona = st.selectbox(
-        "What persona would you like to embody for this post?",
+        "What audience is this post for?",
         options=personas, index=0
     )
     if persona == "Other":
-        persona = st.text_input("Please specify the persona you would like to embody")
+        persona = st.text_input("What persona would you like\
+        to embody for this post?  You can also select 'Other' or 'None'.")
     logger.debug(f"Selected persona: {persona}")
 
     tone = st.selectbox(
@@ -255,15 +261,14 @@ def create_post_home():
 
     verbosity = st.slider(
         "How verbose would you like your post to be?\
-        (1 being very brief, 5 being very detailed)", 1, 5, value=3
+        (1 being very brief and perfect for X, 5 being very detailed)", 1, 5, value=3
     )
     logger.debug(f"Selected verbosity: {verbosity}")
 
     details = st.text_area(
-        """Let us know about the details of your post
-        This could be a description of your dining experience, notes about the book you just read
-        or a summary of your recent travel adventure.  Give the basic framework of your post and
-        let us do the rest!""",
+        """Share some details! Jot down personalized details
+        for us to tailor your post. Just give us the outline,
+        and we'll handle the rest!""",
         placeholder=""
     )
     logger.debug(f"Selected post details: {details}")
@@ -305,9 +310,11 @@ def create_post_home():
         image_style = image_style_select(dall_e_image_styles)
 
         st.markdown("**Choose the image size(s) for your post:**")
-        square_choice = st.checkbox("Square", value=False)
-        stories_choice = st.checkbox("Stories", value=False)
-        landscape_choice = st.checkbox("Landscape", value=False)
+        square_choice = st.checkbox("Square (Perfect for Instagram)", value=False)
+        stories_choice = st.checkbox("""Verticle (Perfect for Instagram Stories,
+        TikTok and Pinterest)""", value=False)
+        landscape_choice = st.checkbox("""Rectangle (Perfect for Facebook, LinkedIn
+        and X)""", value=False)
 
         # If neither are checked, display a warning
         if not square_choice and not stories_choice and not landscape_choice:
@@ -349,7 +356,9 @@ def edit_post_page():
         options=platform_options, index=platform_options.index(st.session_state.platform)
     )
     if st.session_state.persona not in personas:
-        persona = st.text_input("Please specify the persona you would like to embody", value=st.session_state.persona)
+        persona = st.text_input(
+            "Please specify the persona you would like to embody",
+            value=st.session_state.persona)
     else:
         persona = st.selectbox(
             "What persona would you like to embody for this post?",
@@ -357,7 +366,9 @@ def edit_post_page():
         )
     logger.debug(f"Selected persona: {persona}")
     if st.session_state.tone not in post_tones:
-        tone = st.text_input("Please specify the tone you would like to convey", value=st.session_state.tone)
+        tone = st.text_input(
+            "What tone would you like to convey in your post?",
+            value=st.session_state.tone)
     else:
         tone = st.selectbox(
             "What tone would you like to convey in your post?",
@@ -367,15 +378,14 @@ def edit_post_page():
 
     verbosity = st.slider(
         "How verbose would you like your post to be?\
-        (1 being very brief, 5 being very detailed)", 1, 5, value=st.session_state.verbosity
+        (1 being very brief and perfect for X, 5 being very detailed)",
+        1, 5, value=st.session_state.verbosity
     )
 
     details = st.text_area(
-        """Let us know about the details of your post
-        This could be a description of your dining experience, notes about the book you just read
-        or a summary of your recent travel adventure.  Give the basic framework of your post and
-        let us do the rest!""",
-        value=st.session_state.post_details
+        """Share some details! Jot down personalized details
+        for us to tailor your post. Just give us the outline,
+        and we'll handle the rest!""", value=st.session_state.post_details
     )
 
     create_new_post_button = st.button("Create New Post")
@@ -391,7 +401,9 @@ def edit_post_page():
 
 
 async def display_post():
-    st.write(st.session_state.current_image_prompt)
+    new_image = st.session_state.current_images[0][0].save("test_image.png")
+    buffered = io.BytesIO()
+    st.session_state.current_images[0][0].save(buffered, format="PNG")
     st.markdown("#### Here's your post!")
     generating_images = False
     post = await generate_post(
@@ -460,9 +472,10 @@ async def display_post():
             request_changes_button = st.button("Request Changes", key=f"request_changes_{i}")
             if request_changes_button:
                 st.session_state.requested_image_adjustments = requested_changes
+                # Convert the image to a .png file and then to a base64 string
                 new_image_prompt = await get_new_image_prompt(
                     original_prompt=st.session_state.current_image_prompt,
-                    original_image = encode_image(image[0]),
+                    original_image = encode_pil_image(image[0]),
                     requested_adjustments = requested_changes
                 )
                 # Replace the old image with the new one in the current_images list
@@ -470,7 +483,7 @@ async def display_post():
                 new_image = await create_image(new_image_prompt, image[1])
                 st.session_state.current_images.append((new_image, image[1]))
                 st.rerun()
-  
+
     generate_new_post = st.button("Start Over", use_container_width=True)
     if generate_new_post:
         st.session_state.post_page = "Create Post"
