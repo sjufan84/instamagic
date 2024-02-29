@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 st.set_page_config(
     page_title="INSTAMAGIC",
-    page_icon="🔮",
     layout="centered",
     initial_sidebar_state="collapsed",
 )
