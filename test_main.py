@@ -1,7 +1,14 @@
 import streamlit as st
 import logging
+import asyncio
+from typing import List
+from utils.image_utils import encode_image, heic_to_base64
+from utils.post_utils import generate_post
 
 logger = logging.getLogger(__name__)
+
+if "current_post" not in st.session_state:
+    st.session_state.current_post = None
 
 dall_e_image_styles = sorted([
     "Photorealistic",
@@ -147,6 +154,24 @@ platform_options = sorted([
     "YouTube",
 ])
 
+def image_style_select(image_style_options: List[str], index: int = 0):
+    """ Image Style Selection """
+    image_style = st.selectbox(
+        "What style of image would you like to generate?", image_style_options,
+        index = index
+    )
+    return image_style
+
+def get_image_selection():
+    """ Image Selection """
+    image_selection = st.radio(
+        "Would you like to include an image with your post?", ("Yes", "No"), index=1
+    )
+    if image_selection == "Yes":
+        return True
+    else:
+        return False
+
 def select_platform(platform_options, current_platform):
     if current_platform not in platform_options:
         platform = st.text_input(
@@ -221,7 +246,7 @@ def create_form(platform_options, personas, post_tones, post_purposes, current_v
         details = input_details(current_values['details'])
         purpose = select_purpose(post_purposes, current_values['purpose'])
 
-        submit_button = st.form_submit_button(label='Submit')
+        submit_button = st.form_submit_button(label='Generate Post!')
 
     if submit_button:
         return {
@@ -233,9 +258,65 @@ def create_form(platform_options, personas, post_tones, post_purposes, current_v
             'purpose': purpose
         }
 
-def main():
-    st.title("Post Generator")
+def select_image():
+    generate_image = get_image_selection()
+    if generate_image:
+        st.session_state.generate_image = True
+        picture_mode = st.selectbox(
+            '###### 📸 Snap a Pic, 📤 Upload an Image, or Let Us Generate One For You! If you take a picture\
+            or upload an image, the AI will use that image as the basis for its generation.',
+            ("Snap a pic", "Upload an image", "Let Us Generate One For You"), index=None,
+        )
+        if picture_mode == "Snap a pic":
+            uploaded_image = st.camera_input("Snap a pic")
+            if uploaded_image:
+                if uploaded_image.name.endswith(".heic") or uploaded_image.name.endswith(".HEIC"):
+                    image_string = heic_to_base64(uploaded_image)
+                    st.session_state.user_image_string = image_string
+                else:
+                    image_string = encode_image(uploaded_image)
+                st.session_state.user_image_string = image_string
 
+        elif picture_mode == "Upload an image":
+            # Show a file upoloader that only accepts image files
+            uploaded_image = st.file_uploader(
+                "Upload an image", type=["png", "jpg", "jpeg", "heic", "HEIC"]
+            )
+            # Convert the image to a base64 string
+            if uploaded_image:
+                # If the file type is .heic or .HEIC, convert to a .png using PIL
+                if uploaded_image.name.endswith(".heic") or uploaded_image.name.endswith(".HEIC"):
+                    image_string = heic_to_base64(uploaded_image)
+                    st.session_state.user_image_string = image_string
+                else:
+                    image_string = encode_image(uploaded_image)
+                st.session_state.user_image_string = image_string
+        elif picture_mode == "Let Us Generate One For You":
+            st.session_state.user_image_string = None
+        image_style = image_style_select(dall_e_image_styles)
+
+        st.markdown("**Choose the image size(s) for your post:**")
+        square_choice = st.checkbox("Square (Perfect for Instagram)", value=False)
+        stories_choice = st.checkbox("""Verticle (Perfect for Instagram Stories,
+        TikTok and Pinterest)""", value=False)
+        landscape_choice = st.checkbox("""Rectangle (Perfect for Facebook, LinkedIn
+        and X)""", value=False)
+
+        # If neither are checked, display a warning
+        if not square_choice and not stories_choice and not landscape_choice:
+            st.warning("Please select at least one image size.")
+
+        return {
+            'image_style': image_style,
+            'square_choice': square_choice,
+            'stories_choice': stories_choice,
+            'landscape_choice': landscape_choice
+        }
+
+async def main():
+    st.title("Post Generator")
+    post_container = st.empty()
+    images_container = st.empty()
     current_values = {
         'platform': "Instagram",
         'persona': "None",
@@ -245,10 +326,18 @@ def main():
         'purpose': "Other"
     }
 
-    form_values = create_form(platform_options, personas, post_tones, post_purposes, current_values)
+    with post_container.container():
+        form_values = create_form(platform_options, personas, post_tones, post_purposes, current_values)
+    image_values = select_image()
 
     if form_values:
-        st.write(form_values)
+        # Call the generate_post function with the form_values
+        post = await generate_post(form_values)
+        with post_container.container():
+            st.write(post)
+    if image_values:
+        st.write(image_values)
+
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

@@ -15,6 +15,9 @@ if "current_post" not in st.session_state:
 async def generate_post(
         purpose: str, persona: str = None, tone: str = None, platform: str = None, verbosity: int = 3,
         details: str = None):
+    logger.debug(f"Generating post with purpose:\
+    {purpose}, persona: {persona}, tone: {tone},\
+    platform: {platform}, verbosity: {verbosity}, details: {details}")
     messages = [
         {
             "role": "system", "content": f"""
